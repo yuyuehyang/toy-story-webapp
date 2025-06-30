@@ -87,6 +87,21 @@
       background: #000;
       border-radius: 50%;
     }
+    
+  .paper {
+      position: absolute;
+      top: 114px;  /* 放在你想要的出口位置 */
+      left: 50%;
+      transform: translateX(-50%) scaleY(0.05);  /* 初始高度 10% */
+      transform-origin: top center;  /* 從上往下伸展 */
+      width: 80px;
+      height: 120px;  /* 最大高度 */
+      background: black;
+      border: 1px solid black;
+      overflow: hidden;
+      transition: transform 2s ease;
+    }
+
   </style>
 </head>
 <body>
@@ -131,6 +146,7 @@
 
       <div class="rect"></div>
       <div class="circle"></div>
+      <div class="paper" id="paper"></div>
     </div>
   </div>
 
@@ -138,58 +154,76 @@
   <button id="uploadBtn" class="button" onclick="uploadImage()">UPLOAD</button>
 
   <script>
-    function uploadImage() {
-      const fileInput = document.getElementById("fileInput");
-      const button = document.getElementById("uploadBtn");
+  function uploadImage() {
+  const fileInput = document.getElementById("fileInput");
+  const button = document.getElementById("uploadBtn");
+  const paper = document.getElementById("paper");
+  const paperText = document.getElementById("paperText");
 
-      if (!fileInput.files.length) {
-        alert("請先選擇圖片！");
-        return;
-      }
+  if (!fileInput.files.length) {
+    alert("請先選擇圖片！");
+    return;
+  }
 
-      const file = fileInput.files[0];
-      const reader = new FileReader();
+  const file = fileInput.files[0];
+  const reader = new FileReader();
 
-      button.innerText = "SENDING..";
-      button.classList.add("sending");
-      button.disabled = true;
+  button.innerText = "SENDING..";
+  button.classList.add("sending");
+  button.disabled = true;
 
-      reader.onload = function(e) {
-        const base64 = e.target.result.split(',')[1];
+  reader.onload = function(e) {
+    const base64 = e.target.result.split(',')[1];
 
-        fetch("https://script.google.com/macros/s/AKfycbxy-06vf2Vf3nKyhhKHk_TFJp1zLpunyPNc8LPW5mfzvfSy_WRsUoKs-7LWRgidLP7nxQ/exec", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            filename: file.name,
-            base64: base64,
-            mimetype: file.type
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            button.innerText = "SUCCESS";
-            button.classList.remove("sending");
-            button.classList.add("success");
-          } else {
-            button.innerText = "UPLOAD";
-            button.classList.remove("sending");
-            alert("❌ 上傳失敗：" + (data.error || "未知錯誤"));
-          }
-        })
-        .catch(err => {
-          button.innerText = "UPLOAD";
-          button.classList.remove("sending");
-          alert("❌ 發生錯誤：" + err);
-        })
-        .finally(() => {
+    fetch("https://script.google.com/macros/s/AKfycbxy-06vf2Vf3nKyhhKHk_TFJp1zLpunyPNc8LPW5mfzvfSy_WRsUoKs-7LWRgidLP7nxQ/exec", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        filename: file.name,
+        base64: base64,
+        mimetype: file.type
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        button.innerText = "SUCCESS";
+        button.classList.remove("sending");
+        button.classList.add("success");
+        // 吐紙動畫開始
+        paper.style.transform = "translateX(-50%) scaleY(0.05)";
+        paper.style.background = "black";
+            
+        setTimeout(() => {
+          paper.style.transform = "translateX(-50%) scaleY(1)";
+          paper.style.background = "white";
+        }, 100);
+      
+        setTimeout(() => {
+          paper.style.transform = "translateX(-50%) scaleY(0.05)";
+          paper.style.background = "black";
           button.disabled = false;
-        });
-      };
+          button.innerText = "UPLOAD";
+          button.classList.remove("success");
+        }, 3000);
+        
+      } else {
+        button.innerText = "UPLOAD";
+        button.classList.remove("sending");
+        alert("❌ 上傳失敗：" + (data.error || "未知錯誤"));
+        button.disabled = false;
+      }
+    })
+    .catch(err => {
+      button.innerText = "UPLOAD";
+      button.classList.remove("sending");
+      alert("❌ 發生錯誤：" + err);
+      button.disabled = false;
+    });
+  };
 
-      reader.readAsDataURL(file);
-    }
+  reader.readAsDataURL(file);
+}
   </script>
 </body>
 </html>
